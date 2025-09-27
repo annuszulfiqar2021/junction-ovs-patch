@@ -1,3 +1,2 @@
 # USER variables
 export USER_PASSWORD=
-export OVSDB_TABLE_NAME=
