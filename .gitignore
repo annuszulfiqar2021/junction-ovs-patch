@@ -1,1 +1,3 @@
+deps/dpdk
+deps/ovs
 ovs.vars
