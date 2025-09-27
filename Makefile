@@ -49,14 +49,7 @@ help:
 	@echo "=============================="
 	@echo ""
 	@echo "Available targets:"
-	@echo "  install-ovs     - Install Open vSwitch on Ubuntu"
-	@echo "  setup-bridge    - Setup OVS userspace bridge with dtap0 forwarding"
-	@echo "  teardown-bridge - Teardown OVS bridge and restore dtap0"
-	@echo "  uninstall-ovs   - Uninstall Open vSwitch from Ubuntu"
-	@echo "  status          - Show current OVS bridge status"
-	@echo "  show-bridges    - Show OVS bridges and their details"
-	@echo "  clean           - Alias for teardown-bridge"
-	@echo ""
+	@echo "  help - Show this help message"
 
 # Dependencies installation
 install-dependencies:
@@ -81,6 +74,9 @@ install-dpdk:
 
 show-dpdk-version:
 	pkg-config --modversion libdpdk
+
+clean-dpdk-build:
+	-$(SUDO) rm -rf $(DPDK_BUILD_DIR)
 
 # OVS installation
 get-ovs:
@@ -134,20 +130,6 @@ setup-bridge: start-ovs-db clear-ovsdb-table ovs-initialize-dpdk start-ovs-vswit
 	@./gigaflow-scripts/setup_ovs_bridge.sh
 	@echo "✓ Full OVS setup complete!"
 
-# Teardown OVS bridge
-teardown-bridge:
-	@echo "Tearing down OVS bridge..."
-	@chmod +x gigaflow-scripts/teardown_ovs_bridge.sh
-	@./gigaflow-scripts/teardown_ovs_bridge.sh
-
-# Uninstall Open vSwitch
-uninstall-ovs:
-	-$(SUDO) rm -rf $(OVS_BUILD_DIR)
-	-$(SUDO) rm -rf $(OVS_INSTALL_DIR_1)/ovs*
-	-$(SUDO) rm -rf $(OVS_INSTALL_DIR_2)/ovs*
-	-$(SUDO) rm -rf $(OVS_INSTALL_DIR_3)/ovs*
-	-$(SUDO) rm -rf $(OVS_SCRIPTS_PATH)/ovs*
-
 # OVS show commands
 $(OVS_VSWITCHD_LOG_FILE):
 	echo "Log file [$(OVS_VSWITCHD_LOG_FILE)] does not exist. OVS is not running!"
@@ -189,10 +171,18 @@ show-flows:
 count-flows:
 	$(OVS-OFCTL) dump-flows $(BRIDGE_NAME) | wc -l
 
-# Full teardown workflow
-teardown: teardown-bridge
+# Teardown OVS bridge
+teardown-bridge:
+	@echo "Tearing down OVS bridge..."
+	@chmod +x gigaflow-scripts/teardown_ovs_bridge.sh
+	@./gigaflow-scripts/teardown_ovs_bridge.sh
 	@echo "✓ OVS teardown complete!"
 
-# Complete uninstall workflow
-uninstall: teardown-bridge uninstall-ovs
+# Uninstall Open vSwitch
+uninstall-ovs:
+	-$(SUDO) rm -rf $(OVS_BUILD_DIR)
+	-$(SUDO) rm -rf $(OVS_INSTALL_DIR_1)/ovs*
+	-$(SUDO) rm -rf $(OVS_INSTALL_DIR_2)/ovs*
+	-$(SUDO) rm -rf $(OVS_INSTALL_DIR_3)/ovs*
+	-$(SUDO) rm -rf $(OVS_SCRIPTS_PATH)/ovs*
 	@echo "✓ Complete OVS uninstall finished!"
