@@ -16,11 +16,11 @@ if ! ip link show "$TAP_INTERFACE" > /dev/null 2>&1; then
     exit 1
 fi
 
-# Check if OVS is running
-if ! systemctl is-active --quiet openvswitch-switch; then
-    echo "✗ Open vSwitch is not running. Please run install_ovs.sh first."
-    exit 1
-fi
+# # Check if OVS is running
+# if ! systemctl is-active --quiet openvswitch-switch; then
+#     echo "✗ Open vSwitch is not running. Please run install_ovs.sh first."
+#     exit 1
+# fi
 
 # Create veth pair if not exists
 if ! ip link show "$VETH0" > /dev/null 2>&1; then

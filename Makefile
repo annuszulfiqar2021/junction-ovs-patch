@@ -29,11 +29,13 @@ export OVS_INSTALL_DIR_3							= /usr/sbin
 
 # condensed commands
 export SUDO 										= echo $(USER_PASSWORD) | sudo -S
-export OVS-CTL 										= $(SUDO) env "PATH=$$PATH" ovs-ctl
+export OVS-CTL 										= $(SUDO) env "PATH=$$PATH" /usr/local/share/openvswitch/scripts/ovs-ctl
 export OVS-VSCTL 									= $(SUDO) -s ovs-vsctl
 export OVS-OFCTL 									= $(SUDO) -s ovs-ofctl
 export OVS-DPCTL									= $(SUDO) -s ovs-dpctl
 export OVS-APPCTL 									= $(SUDO) -s ovs-appctl
+
+export BRIDGE_NAME 									= junction-br0
 
 .PHONY: help get-dpdk configure-dpdk build-dpdk install-dpdk show-dpdk-version \
 	install-ovs setup-bridge teardown-bridge uninstall-ovs clean status \
@@ -103,11 +105,34 @@ install-ovs:
 
 build-and-install-ovs-dpdk: configure-ovs-build-with-dpdk build-ovs install-ovs
 
+start-ovs-db:
+	$(OVS-CTL) --no-ovs-vswitchd start --system-id=$(OVS_SYSTEM_ID)
+
+# $(OVS-VSCTL) clear Open_vSwitch . other_config
+clear-ovsdb-table:
+	- $(OVS-VSCTL) --all destroy Open_vSwitch
+
+ovs-initialize-dpdk:	
+	$(OVS-VSCTL) --no-wait set Open_vSwitch . other_config:dpdk-init=true
+
+start-ovs-vswitchd:
+	$(OVS-CTL) --no-ovsdb-server --db-sock="$(OVS_DB_SOCK)" start
+
+assign-1-core-to-pmd-threads:
+	$(SUDO) ovs-vsctl --no-wait set Open_vSwitch . other_config:pmd-cpu-mask=0x01
+
+set-ovs-nhandler-nrevalidator-threads-to-1:
+	$(SUDO) ovs-vsctl --no-wait set Open_vSwitch . other_config:n-handler-threads=1
+	$(SUDO) ovs-vsctl --no-wait set Open_vSwitch . other_config:n-revalidator-threads=1
+
+post-setup-ovs-db: set-ovs-nhandler-nrevalidator-threads-to-1
+
 # Setup OVS bridge with dtap0 forwarding
-setup-bridge:
+setup-bridge: start-ovs-db clear-ovsdb-table ovs-initialize-dpdk start-ovs-vswitchd assign-1-core-to-pmd-threads post-setup-ovs-db
 	@echo "Setting up OVS bridge..."
 	@chmod +x gigaflow-scripts/setup_ovs_bridge.sh
 	@./gigaflow-scripts/setup_ovs_bridge.sh
+	@echo "✓ Full OVS setup complete!"
 
 # Teardown OVS bridge
 teardown-bridge:
@@ -123,59 +148,46 @@ uninstall-ovs:
 	-$(SUDO) rm -rf $(OVS_INSTALL_DIR_3)/ovs*
 	-$(SUDO) rm -rf $(OVS_SCRIPTS_PATH)/ovs*
 
-# uninstall-ovs:
-# 	@echo "Uninstalling Open vSwitch..."
-# 	@chmod +x gigaflow-scripts/uninstall_ovs.sh
-# 	@./gigaflow-scripts/uninstall_ovs.sh
+# OVS show commands
+$(OVS_VSWITCHD_LOG_FILE):
+	echo "Log file [$(OVS_VSWITCHD_LOG_FILE)] does not exist. OVS is not running!"
+	false
 
-# Show current OVS status
-status:
-	@echo "Open vSwitch Status:"
-	@echo "==================="
-	@echo ""
-	@echo "Service status:"
-	@systemctl is-active openvswitch-switch 2>/dev/null || echo "Service not running"
-	@echo ""
-	@echo "Bridges:"
-	@sudo ovs-vsctl list-br 2>/dev/null || echo "No bridges found"
-	@echo ""
-	@echo "Bridge details:"
-	@sudo ovs-vsctl show 2>/dev/null || echo "No OVS configuration found"
-	@echo ""
-	@echo "dtap0 interface:"
-	@ip link show dtap0 2>/dev/null || echo "dtap0 interface not found"
-	@echo ""
-	@echo "Bridge flows:"
-	@for bridge in $$(sudo ovs-vsctl list-br 2>/dev/null); do \
-		echo "Flows for bridge $$bridge:"; \
-		sudo ovs-ofctl dump-flows $$bridge 2>/dev/null || echo "  No flows found"; \
-		echo ""; \
-	done
+show-ovs-version:
+	ovs-vswitchd --version
 
-# Show OVS bridges and their details
+show-ovs-status:
+	ovs-vsctl show
+
+show-ovs-flows:
+	ovs-ofctl dump-flows ovs-vswitchd
+
+show-ovs-bridges:
+	ovs-vsctl list-br
+
+show-vswitchd-status:
+	$(SUDO) systemctl status ovs-vswitchd
+
+show-vswitchd-log:
+	$(SUDO) cat $(OVS_VSWITCHD_LOG_FILE)
+
+show-vswitchd-log-last-40:
+	$(SUDO) tail -40 $(OVS_VSWITCHD_LOG_FILE)
+
+delete-log-file:
+	$(SUDO) rm -rf $(OVS_VSWITCHD_LOG_FILE)
+
 show-bridges:
-	@echo "Open vSwitch Bridges:"
-	@echo "===================="
-	@echo ""
-	@echo "Bridge list:"
-	@sudo ovs-vsctl list-br 2>/dev/null || echo "No bridges found"
-	@echo ""
-	@echo "Bridge details:"
-	@sudo ovs-vsctl show 2>/dev/null || echo "No OVS configuration found"
-	@echo ""
-	@echo "Bridge flows:"
-	@for bridge in $$(sudo ovs-vsctl list-br 2>/dev/null); do \
-		echo "Flows for bridge $$bridge:"; \
-		sudo ovs-ofctl dump-flows $$bridge 2>/dev/null || echo "  No flows found"; \
-		echo ""; \
-	done
+	$(OVS-VSCTL) show
 
-# Alias for teardown-bridge
-clean: teardown-bridge
+show-openflow-ports:
+	$(OVS-OFCTL) show $(BRIDGE_NAME)
 
-# Full setup workflow
-setup: install-ovs setup-bridge
-	@echo "✓ Full OVS setup complete!"
+show-flows:
+	$(OVS-OFCTL) dump-flows $(BRIDGE_NAME)
+
+count-flows:
+	$(OVS-OFCTL) dump-flows $(BRIDGE_NAME) | wc -l
 
 # Full teardown workflow
 teardown: teardown-bridge
