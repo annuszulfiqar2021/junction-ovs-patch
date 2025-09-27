@@ -1,4 +1,4 @@
-# Gigaflow/OVS Management Scripts for Junction/Concord Demo
+# Gigaflow/OVS Management for Junction/Concord Demo
 
 This repository contains the management scripts for the Gigaflow/OVS setup for the Junction/Concord demo.
 
