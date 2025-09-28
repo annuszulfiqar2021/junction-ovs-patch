@@ -121,7 +121,12 @@ set-ovs-nhandler-nrevalidator-threads-to-1:
 	$(SUDO) ovs-vsctl --no-wait set Open_vSwitch . other_config:n-handler-threads=1
 	$(SUDO) ovs-vsctl --no-wait set Open_vSwitch . other_config:n-revalidator-threads=1
 
-post-setup-ovs-db: set-ovs-nhandler-nrevalidator-threads-to-1
+disable-caches:
+	$(OVS-VSCTL) --no-wait set Open_vSwitch . other_config:emc-insert-inv-prob=0
+	$(OVS-APPCTL) upcall/disable-megaflows
+	$(OVS-VSCTL) --no-wait set Open_vSwitch . other_config:max-idle=1
+
+post-setup-ovs-db: set-ovs-nhandler-nrevalidator-threads-to-1 disable-caches
 
 # Setup OVS bridge with dtap0 forwarding
 setup-bridge: start-ovs-db clear-ovsdb-table ovs-initialize-dpdk start-ovs-vswitchd assign-1-core-to-pmd-threads post-setup-ovs-db
