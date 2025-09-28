@@ -135,6 +135,16 @@ setup-bridge: start-ovs-db clear-ovsdb-table ovs-initialize-dpdk start-ovs-vswit
 	@./gigaflow-scripts/setup_ovs_bridge.sh
 	@echo "✓ Full OVS setup complete!"
 
+confirm-slowpath-mode:
+	$(OVS-APPCTL) upcall/show
+	$(OVS-APPCTL) dpctl/dump-flows -m type=ovs
+
+enable-caches:
+	$(OVS-APPCTL) upcall/enable-megaflows
+	$(OVS-VSCTL) --no-wait remove Open_vSwitch . other_config emc-insert-inv-prob || true
+	$(OVS-VSCTL) --no-wait remove Open_vSwitch . other_config max-idle || true
+	@echo "✓ OVS caches (EMC + megaflows) re-enabled at runtime"
+
 # OVS show commands
 $(OVS_VSWITCHD_LOG_FILE):
 	echo "Log file [$(OVS_VSWITCHD_LOG_FILE)] does not exist. OVS is not running!"
