@@ -135,7 +135,7 @@ setup-bridge: start-ovs-db clear-ovsdb-table ovs-initialize-dpdk start-ovs-vswit
 	@./gigaflow-scripts/setup_ovs_bridge.sh
 	@echo "✓ Full OVS setup complete!"
 
-confirm-slowpath-mode:
+confirm-slowpath-only-mode:
 	$(OVS-APPCTL) upcall/show
 	$(OVS-APPCTL) dpctl/dump-flows -m type=ovs
 

@@ -28,12 +28,27 @@ make build-and-install-ovs-dpdk
 make show-ovs-version
 ```
 
-### Setup Bridge
+### Setup Bridge: Slowpath-Only Mode
+
 ```bash
 make setup-bridge
 make show-bridges
 make show-flows
 ```
+
+This will bring up the bridge in a "slow path" only mode.
+Check this mode by running:
+
+```bash
+make confirm-slowpath-only-mode
+```
+
+### Enable Caching: Megaflow/Gigaflow Mode
+```bash
+make enable-caches
+```
+
+You should see a noticable difference in the performance because flows are going to get cached now.
 
 ### Run the Junction/Concord Demo...
 
