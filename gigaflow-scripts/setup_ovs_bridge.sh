@@ -63,9 +63,14 @@ sudo ovs-ofctl add-flow "$BRIDGE_NAME" "table=0,in_port=$P_TAP,actions=resubmit(
 sudo ovs-ofctl add-flow "$BRIDGE_NAME" "table=1,actions=resubmit(,2)"
 sudo ovs-ofctl add-flow "$BRIDGE_NAME" "table=2,actions=resubmit(,3)"
 sudo ovs-ofctl add-flow "$BRIDGE_NAME" "table=3,actions=resubmit(,4)"
+sudo ovs-ofctl add-flow "$BRIDGE_NAME" "table=4,actions=resubmit(,5)"
+sudo ovs-ofctl add-flow "$BRIDGE_NAME" "table=5,actions=resubmit(,6)"
+sudo ovs-ofctl add-flow "$BRIDGE_NAME" "table=6,actions=resubmit(,7)"
+sudo ovs-ofctl add-flow "$BRIDGE_NAME" "table=7,actions=resubmit(,8)"
+sudo ovs-ofctl add-flow "$BRIDGE_NAME" "table=8,actions=resubmit(,9)"
 # Final table sends back out the opposite port
-sudo ovs-ofctl add-flow "$BRIDGE_NAME" "table=4,in_port=$P_VETH1,actions=output:$P_TAP"
-sudo ovs-ofctl add-flow "$BRIDGE_NAME" "table=4,in_port=$P_TAP,actions=output:$P_VETH1"
+sudo ovs-ofctl add-flow "$BRIDGE_NAME" "table=9,in_port=$P_VETH1,actions=output:$P_TAP"
+sudo ovs-ofctl add-flow "$BRIDGE_NAME" "table=9,in_port=$P_TAP,actions=output:$P_VETH1"
 
 # Display bridge status
 echo "Userspace bridge setup complete!"
